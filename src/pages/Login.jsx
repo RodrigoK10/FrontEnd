@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/api';
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
@@ -13,11 +13,10 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', credentials);
-      localStorage.setItem('token', response.data.token);
+      await authService.login(credentials.usuario, credentials.contrasena);
       navigate('/usuarios');
     } catch (err) {
-      setError('Usuario o contraseña incorrectos');
+      setError(err.error || 'Usuario o contraseña incorrectos');
     }
   };
 

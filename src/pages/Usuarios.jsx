@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
-const API_URL = 'http://localhost:3001/api/usuarios';
+import { userService, authService } from '../services/api';
 
 export default function Usuarios() {
   const navigate = useNavigate();
@@ -25,11 +23,8 @@ export default function Usuarios() {
 
   const obtenerUsuarios = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(API_URL, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsuarios(res.data);
+      const data = await userService.getAll();
+      setUsuarios(data);
     } catch (error) {
       if (error.response?.status === 401) {
         navigate('/login');
@@ -38,21 +33,23 @@ export default function Usuarios() {
   };
 
   const agregarUsuario = async () => {
-    const token = localStorage.getItem('token');
-    await axios.post(API_URL, nuevoUsuario, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setNuevoUsuario({ usuario: '', contrasena: '', correo_electronico: '' });
-    obtenerUsuarios();
+    try {
+      await userService.update(0, nuevoUsuario);
+      setNuevoUsuario({ usuario: '', contrasena: '', correo_electronico: '' });
+      obtenerUsuarios();
+    } catch (error) {
+      console.error('Error al agregar usuario:', error);
+    }
   };
 
   const eliminarUsuario = async (id) => {
     if (window.confirm('¿Está seguro de eliminar este usuario?')) {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      obtenerUsuarios();
+      try {
+        await userService.delete(id);
+        obtenerUsuarios();
+      } catch (error) {
+        console.error('Error al eliminar usuario:', error);
+      }
     }
   };
 
@@ -67,16 +64,17 @@ export default function Usuarios() {
   };
 
   const guardarEdicion = async () => {
-    const token = localStorage.getItem('token');
-    await axios.put(`${API_URL}/${editandoId}`, usuarioEditado, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setEditandoId(null);
-    obtenerUsuarios();
+    try {
+      await userService.update(editandoId, usuarioEditado);
+      setEditandoId(null);
+      obtenerUsuarios();
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+    }
   };
 
   const cerrarSesion = () => {
-    localStorage.removeItem('token');
+    authService.logout();
     navigate('/login');
   };
 
