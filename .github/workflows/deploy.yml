@@ -1,0 +1,30 @@
+name: Frontend - Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v3
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Construir proyecto
+        run: npm run build
+
+      - name: Comprimir contenido del build
+        run: zip -r frontend.zip dist
+
+      - name: Simular despliegue
+        run: echo "Frontend listo para desplegar desde frontend.zip"
