@@ -17,7 +17,21 @@ api.interceptors.request.use(
         return config;
     },
     (error) => {
+        console.error('Error en el interceptor:', error);
         return Promise.reject(error);
+    }
+);
+
+// Interceptor para manejar respuestas
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        console.error('Error en la respuesta:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            error: error.message
+        });
+        return Promise.reject(error.response?.data || error);
     }
 );
 
@@ -25,14 +39,22 @@ api.interceptors.request.use(
 export const authService = {
     login: async (usuario, contrasena) => {
         try {
-            const response = await api.post('/auth/login', { usuario, contrasena });
+            console.log('Enviando petición de login:', { usuario, contrasena });
+            const response = await api.post('/auth/login', {
+                usuario: usuario,
+                contrasena: contrasena
+            });
+            console.log('Respuesta de login:', response.data);
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
+                if (response.data.user) {
+                    localStorage.setItem('user', JSON.stringify(response.data.user));
+                }
             }
             return response.data;
         } catch (error) {
-            throw error.response?.data || { error: 'Error en el servidor' };
+            console.error('Error en login:', error);
+            throw error;
         }
     },
 
@@ -41,11 +63,13 @@ export const authService = {
             const response = await api.post('/auth/register', userData);
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
+                if (response.data.user) {
+                    localStorage.setItem('user', JSON.stringify(response.data.user));
+                }
             }
             return response.data;
         } catch (error) {
-            throw error.response?.data || { error: 'Error en el servidor' };
+            throw error.response?.data || error;
         }
     },
 
@@ -62,7 +86,7 @@ export const userService = {
             const response = await api.get('/usuarios');
             return response.data;
         } catch (error) {
-            throw error.response?.data || { error: 'Error en el servidor' };
+            throw error.response?.data || error;
         }
     },
 
@@ -71,7 +95,18 @@ export const userService = {
             const response = await api.get(`/usuarios/${id}`);
             return response.data;
         } catch (error) {
-            throw error.response?.data || { error: 'Error en el servidor' };
+            throw error.response?.data || error;
+        }
+    },
+
+    create: async (userData) => {
+        try {
+            console.log('Creando nuevo usuario:', userData);
+            const response = await api.post('/usuarios', userData);
+            return response.data;
+        } catch (error) {
+            console.error('Error al crear usuario:', error);
+            throw error.response?.data || error;
         }
     },
 
@@ -80,7 +115,7 @@ export const userService = {
             const response = await api.put(`/usuarios/${id}`, userData);
             return response.data;
         } catch (error) {
-            throw error.response?.data || { error: 'Error en el servidor' };
+            throw error.response?.data || error;
         }
     },
 
@@ -89,7 +124,7 @@ export const userService = {
             const response = await api.delete(`/usuarios/${id}`);
             return response.data;
         } catch (error) {
-            throw error.response?.data || { error: 'Error en el servidor' };
+            throw error.response?.data || error;
         }
     }
 };

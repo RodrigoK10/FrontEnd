@@ -10,6 +10,7 @@ export default function Usuarios() {
     contrasena: '',
     correo_electronico: '',
   });
+  const [error, setError] = useState('');
   const [editandoId, setEditandoId] = useState(null);
   const [usuarioEditado, setUsuarioEditado] = useState({});
 
@@ -25,51 +26,70 @@ export default function Usuarios() {
     try {
       const data = await userService.getAll();
       setUsuarios(data);
+      setError('');
     } catch (error) {
       if (error.response?.status === 401) {
         navigate('/login');
       }
+      setError('Error al obtener usuarios');
     }
   };
 
   const agregarUsuario = async () => {
     try {
-      await userService.update(0, nuevoUsuario);
+      setError('');
+      if (!nuevoUsuario.usuario || !nuevoUsuario.contrasena || !nuevoUsuario.correo_electronico) {
+        setError('Por favor complete todos los campos');
+        return;
+      }
+
+      await authService.register(nuevoUsuario);
       setNuevoUsuario({ usuario: '', contrasena: '', correo_electronico: '' });
       obtenerUsuarios();
     } catch (error) {
       console.error('Error al agregar usuario:', error);
+      setError(error.message || 'Error al agregar usuario');
     }
   };
 
   const eliminarUsuario = async (id) => {
     if (window.confirm('¿Está seguro de eliminar este usuario?')) {
       try {
+        setError('');
         await userService.delete(id);
         obtenerUsuarios();
       } catch (error) {
         console.error('Error al eliminar usuario:', error);
+        setError('Error al eliminar usuario');
       }
     }
   };
 
   const empezarEdicion = (usuario) => {
     setEditandoId(usuario.id_usuario);
-    setUsuarioEditado({ ...usuario });
+    setUsuarioEditado({ ...usuario, contrasena: '' });
+    setError('');
   };
 
   const cancelarEdicion = () => {
     setEditandoId(null);
     setUsuarioEditado({});
+    setError('');
   };
 
   const guardarEdicion = async () => {
     try {
-      await userService.update(editandoId, usuarioEditado);
+      setError('');
+      const datosActualizados = { ...usuarioEditado };
+      if (!datosActualizados.contrasena) {
+        delete datosActualizados.contrasena;
+      }
+      await userService.update(editandoId, datosActualizados);
       setEditandoId(null);
       obtenerUsuarios();
     } catch (error) {
       console.error('Error al actualizar usuario:', error);
+      setError('Error al actualizar usuario');
     }
   };
 
@@ -79,7 +99,7 @@ export default function Usuarios() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen w-full bg-gray-100">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -94,10 +114,15 @@ export default function Usuarios() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Formulario para agregar usuario */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Agregar nuevo usuario</h3>
+          {error && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 rounded-md p-3">
+              {error}
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <input
               className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -143,7 +168,8 @@ export default function Usuarios() {
                     <input
                       type="password"
                       className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                      value={usuarioEditado.contrasena}
+                      placeholder="Nueva contraseña (opcional)"
+                      value={usuarioEditado.contrasena || ''}
                       onChange={(e) => setUsuarioEditado({ ...usuarioEditado, contrasena: e.target.value })}
                     />
                     <input
