@@ -1,30 +1,27 @@
-name: Frontend - Deploy
+name: Deploy Frontend
 
 on:
   push:
     branches: [main]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    name: Build and Deploy Frontend to Azure Static Web App
+
 
     steps:
-      - name: Clonar repositorio
+      - name: 📥 Checkout repo
         uses: actions/checkout@v3
 
-      - name: Instalar Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Instalar dependencias
-        run: npm install
-
-      - name: Construir proyecto
+      - name: 🔨 Build frontend
         run: npm run build
 
-      - name: Comprimir contenido del build
-        run: zip -r frontend.zip dist
-
-      - name: Simular despliegue
-        run: echo "Frontend listo para desplegar desde frontend.zip"
+      - name: 🚀 Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/"
+          output_location: "dist"
